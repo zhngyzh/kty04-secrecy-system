@@ -1,0 +1,38 @@
+body {
+    background-color: #f5f5f5;
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    border: none;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.badge {
+    padding: 0.35em 0.65em;
+}
+
+.status-verified {
+    color: #28a745;
+}
+
+.status-unverified {
+    color: #dc3545;
+}
+
+.status-opened {
+    color: #007bff;
+}

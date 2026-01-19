@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KTY04 群签名管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">KTY04 群签名管理系统</span>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- 标签页导航 -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="groups-tab" data-bs-toggle="tab" data-bs-target="#groups" type="button">
+                    群组管理
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="members-tab" data-bs-toggle="tab" data-bs-target="#members" type="button">
+                    成员管理
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="signatures-tab" data-bs-toggle="tab" data-bs-target="#signatures" type="button">
+                    签名管理
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content mt-3" id="mainTabContent">
+            <!-- 群组管理 -->
+            <div class="tab-pane fade show active" id="groups" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">群组列表</h5>
+                        <button class="btn btn-primary btn-sm" onclick="showCreateGroupModal()">创建群组</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="groupsList" class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>名称</th>
+                                        <th>成员数</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="groupsTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center">加载中...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 成员管理 -->
+            <div class="tab-pane fade" id="members" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">成员列表</h5>
+                        <div>
+                            <select id="memberGroupFilter" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="loadMembers()">
+                                <option value="">所有群组</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm ms-2" onclick="showAddMemberModal()">添加成员</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="membersList" class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>名称</th>
+                                        <th>群组ID</th>
+                                        <th>创建时间</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="membersTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center">加载中...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 签名管理 -->
+            <div class="tab-pane fade" id="signatures" role="tabpanel">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">签名列表</h5>
+                        <div>
+                            <select id="signatureGroupFilter" class="form-select form-select-sm d-inline-block" style="width: auto;" onchange="loadSignatures()">
+                                <option value="">所有群组</option>
+                            </select>
+                            <button class="btn btn-primary btn-sm ms-2" onclick="showCreateSignatureModal()">创建签名</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="signaturesList" class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>消息</th>
+                                        <th>成员</th>
+                                        <th>状态</th>
+                                        <th>创建时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="signaturesTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center">加载中...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建群组模态框 -->
+    <div class="modal fade" id="createGroupModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">创建群组</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">群组名称</label>
+                        <input type="text" class="form-control" id="groupNameInput" placeholder="输入群组名称">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="createGroup()">创建</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加成员模态框 -->
+    <div class="modal fade" id="addMemberModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加成员</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">选择群组</label>
+                        <select class="form-select" id="addMemberGroupSelect"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">成员名称</label>
+                        <input type="text" class="form-control" id="memberNameInput" placeholder="输入成员名称">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="addMember()">添加</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建签名模态框 -->
+    <div class="modal fade" id="createSignatureModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">创建签名</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">选择群组</label>
+                        <select class="form-select" id="signatureGroupSelect" onchange="loadGroupMembers()"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">选择成员</label>
+                        <select class="form-select" id="signatureMemberSelect"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">消息内容</label>
+                        <textarea class="form-control" id="signatureMessageInput" rows="3" placeholder="输入要签名的消息"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="createSignature()">创建签名</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
