@@ -9,7 +9,7 @@ import sys
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from api import groups, members, signatures, auth
+from api import groups, members, signatures, auth, documents, audit
 from utils.database import init_db, get_db
 from utils.key_manager import KeyManager
 
@@ -32,6 +32,8 @@ app.register_blueprint(auth.bp)
 app.register_blueprint(groups.bp)
 app.register_blueprint(members.bp)
 app.register_blueprint(signatures.bp)
+app.register_blueprint(documents.bp)
+app.register_blueprint(audit.bp)
 
 def log_audit(action, resource_type=None, resource_id=None, details=None):
     """记录审计日志"""
@@ -70,6 +72,16 @@ def css_files(filename):
 def js_files(filename):
     """提供 JS 文件"""
     return send_from_directory(os.path.join(FRONTEND_DIR, 'js'), filename)
+
+@app.route('/bootstrap/<path:filename>')
+def bootstrap_files(filename):
+    """提供本地 Bootstrap 文件"""
+    return send_from_directory(os.path.join(FRONTEND_DIR, 'bootstrap'), filename)
+
+@app.route('/icons/<path:filename>')
+def icon_files(filename):
+    """提供本地图标文件"""
+    return send_from_directory(os.path.join(FRONTEND_DIR, 'icons'), filename)
 
 if __name__ == '__main__':
     # 确保数据目录存在

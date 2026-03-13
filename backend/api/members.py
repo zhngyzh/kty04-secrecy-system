@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from utils.database import get_db
 from utils.key_manager import KeyManager
-from utils.auth import require_admin, require_auth
+from utils.auth import require_admin
 from pygroupsig import groupsig, constants, memkey
 from base64 import b64encode
 
@@ -12,8 +12,9 @@ bp = Blueprint('members', __name__, url_prefix='/api/members')
 key_manager = KeyManager()
 
 @bp.route('', methods=['GET'])
+@require_admin
 def list_members():
-    """获取成员列表"""
+    """获取成员列表（仅管理员）"""
     group_id = request.args.get('group_id', type=int)
     
     conn = get_db()
@@ -103,10 +104,14 @@ def add_member():
         )
         memkey_obj = memkey.memkey_import(constants.KTY04_CODE, mekeyb64)
         
+        # 计算 GML 索引（成员在群组中的序号）
+        cursor.execute('SELECT COUNT(*) as cnt FROM members WHERE group_id=?', (group_id,))
+        gml_index = cursor.fetchone()['cnt']
+
         # 保存到数据库
         cursor.execute(
-            'INSERT INTO members (user_id, group_id, name) VALUES (?, ?, ?)',
-            (user_id, group_id, member_name)
+            'INSERT INTO members (user_id, group_id, name, gml_index) VALUES (?, ?, ?, ?)',
+            (user_id, group_id, member_name, gml_index)
         )
         member_id = cursor.lastrowid
         
@@ -149,8 +154,9 @@ def add_member():
         }), 500
 
 @bp.route('/<int:member_id>', methods=['GET'])
+@require_admin
 def get_member(member_id):
-    """获取成员详情"""
+    """获取成员详情（仅管理员）"""
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM members WHERE id=?', (member_id,))
