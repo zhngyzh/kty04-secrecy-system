@@ -63,7 +63,7 @@ def check_user_in_group(user_id, group_id):
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
-        'SELECT COUNT(*) as count FROM members WHERE id=? AND group_id=?',
+        'SELECT COUNT(*) as count FROM members WHERE user_id=? AND group_id=?',
         (user_id, group_id)
     )
     result = cursor.fetchone()

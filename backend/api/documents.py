@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from utils.database import get_db
 from utils.key_manager import KeyManager
-from utils.auth import require_admin, require_auth, get_current_user
+from utils.auth import require_admin, require_auth, get_current_user, ROLE_ADMIN
 from pygroupsig import groupsig, constants
 import hashlib
 
@@ -32,10 +32,11 @@ def _gen_doc_number():
 @bp.route('', methods=['GET'])
 @require_auth
 def list_documents():
-    """获取涉密文件列表"""
+    """获取涉密文件列表（非管理员仅可查看所属群组的文件）"""
     group_id = request.args.get('group_id', type=int)
     status = request.args.get('status')
 
+    user = get_current_user()
     conn = get_db()
     cursor = conn.cursor()
 
@@ -46,6 +47,11 @@ def list_documents():
              LEFT JOIN users u ON d.created_by = u.id
              WHERE 1=1'''
     params = []
+
+    # 非管理员只能查看所属群组的文件
+    if user and user.get('role') != ROLE_ADMIN:
+        sql += ' AND d.group_id IN (SELECT group_id FROM members WHERE user_id=?)'
+        params.append(user['id'])
 
     if group_id:
         sql += ' AND d.group_id=?'
@@ -121,7 +127,8 @@ def create_document():
 @bp.route('/<int:doc_id>', methods=['GET'])
 @require_auth
 def get_document(doc_id):
-    """获取文件详情（含签名列表）"""
+    """获取文件详情（含签名列表，非管理员需为所属群组成员）"""
+    user = get_current_user()
     conn = get_db()
     cursor = conn.cursor()
 
@@ -137,6 +144,16 @@ def get_document(doc_id):
     if not doc:
         conn.close()
         return jsonify({'success': False, 'message': '文件不存在'}), 404
+
+    # 非管理员需为所属群组成员才能查看
+    if user and user.get('role') != ROLE_ADMIN:
+        cursor.execute(
+            'SELECT COUNT(*) as cnt FROM members WHERE user_id=? AND group_id=?',
+            (user['id'], doc['group_id'])
+        )
+        if cursor.fetchone()['cnt'] == 0:
+            conn.close()
+            return jsonify({'success': False, 'message': '无权访问该群组的文件'}), 403
 
     # 获取文件关联的签名
     cursor.execute(

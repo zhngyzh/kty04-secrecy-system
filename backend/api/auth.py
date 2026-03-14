@@ -72,8 +72,7 @@ def register():
             'user_id': user_id,
             'token': token,
             'role': role,
-            'username': username,
-            'display_name': display_name
+            'username': username
         })
     except Exception as e:
         return jsonify({'success': False, 'message': f'注册失败: {str(e)}'}), 500
@@ -117,8 +116,7 @@ def login():
             'user_id': user['id'],
             'token': token,
             'role': user['role'],
-            'username': user['username'],
-            'display_name': user['display_name'] or user['username']
+            'username': user['username']
         })
     except Exception as e:
         return jsonify({'success': False, 'message': f'登录失败: {str(e)}'}), 500

@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from utils.database import get_db
 from utils.key_manager import KeyManager
-from utils.auth import require_admin, require_auth, get_current_user
+from utils.auth import require_admin, require_auth, get_current_user, ROLE_ADMIN
 from pygroupsig import groupsig, constants
 import json
 
@@ -16,31 +16,31 @@ UINT_MAX = 2**32 - 1
 @bp.route('', methods=['GET'])
 @require_auth
 def list_signatures():
-    """获取签名列表（需登录）"""
+    """获取签名列表（非管理员仅可查看所属群组的签名）"""
     group_id = request.args.get('group_id', type=int)
-    
+
+    user = get_current_user()
     conn = get_db()
     cursor = conn.cursor()
-    
+
+    sql = '''SELECT s.*, m.name as member_name, g.name as group_name
+             FROM signatures s
+             LEFT JOIN members m ON s.member_id = m.id
+             LEFT JOIN groups g ON s.group_id = g.id
+             WHERE 1=1'''
+    params = []
+
+    # 非管理员只能查看所属群组的签名
+    if user and user.get('role') != ROLE_ADMIN:
+        sql += ' AND s.group_id IN (SELECT group_id FROM members WHERE user_id=?)'
+        params.append(user['id'])
+
     if group_id:
-        cursor.execute(
-            '''SELECT s.*, m.name as member_name, g.name as group_name
-               FROM signatures s
-               LEFT JOIN members m ON s.member_id = m.id
-               LEFT JOIN groups g ON s.group_id = g.id
-               WHERE s.group_id=?
-               ORDER BY s.created_at DESC''',
-            (group_id,)
-        )
-    else:
-        cursor.execute(
-            '''SELECT s.*, m.name as member_name, g.name as group_name
-               FROM signatures s
-               LEFT JOIN members m ON s.member_id = m.id
-               LEFT JOIN groups g ON s.group_id = g.id
-               ORDER BY s.created_at DESC'''
-        )
-    
+        sql += ' AND s.group_id=?'
+        params.append(group_id)
+
+    sql += ' ORDER BY s.created_at DESC'
+    cursor.execute(sql, params)
     signatures_list = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return jsonify({'signatures': signatures_list})

@@ -88,7 +88,7 @@ function toggleAuthForm(showLogin) {
 async function doLogin() {
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
-    if (!username || !password) return showToast('请输入用户名和密码', 'warning');
+    if (!username || !password) return showToast('请输入姓名和密码', 'warning');
     try {
         const data = await apiPost('/auth/login', { username, password });
         if (data.success) {
@@ -103,13 +103,12 @@ async function doLogin() {
 
 async function doRegister() {
     const username = document.getElementById('regUsername').value.trim();
-    const display_name = document.getElementById('regDisplayName').value.trim();
     const department = document.getElementById('regDepartment').value.trim();
     const password = document.getElementById('regPassword').value;
-    if (!username || !password) return showToast('请填写用户名和密码', 'warning');
+    if (!username || !password) return showToast('请填写姓名和密码', 'warning');
     if (password.length < 6) return showToast('密码至少6位', 'warning');
     try {
-        const data = await apiPost('/auth/register', { username, password, display_name, department });
+        const data = await apiPost('/auth/register', { username, password, department });
         if (data.success) {
             saveAuth(data);
             showApp();
@@ -124,8 +123,8 @@ function saveAuth(data) {
     state.userId = data.user_id;
     state.token = data.token;
     state.role = data.role;
-    state.user = { username: data.username, display_name: data.display_name || data.username, role: data.role };
-    localStorage.setItem('auth', JSON.stringify({ userId: data.user_id, token: data.token, role: data.role, username: data.username, display_name: data.display_name || data.username }));
+    state.user = { username: data.username, role: data.role };
+    localStorage.setItem('auth', JSON.stringify({ userId: data.user_id, token: data.token, role: data.role, username: data.username }));
 }
 
 function loadAuth() {
@@ -136,7 +135,7 @@ function loadAuth() {
             state.userId = saved.userId;
             state.token = saved.token;
             state.role = saved.role;
-            state.user = { username: saved.username, display_name: saved.display_name || saved.username, role: saved.role };
+            state.user = { username: saved.username, role: saved.role };
             return true;
         }
     } catch (_) {}
@@ -159,7 +158,7 @@ function showApp() {
     document.getElementById('authPage').style.display = 'none';
     document.getElementById('mainApp').style.display = 'flex';
     // 更新侧边栏用户信息
-    document.getElementById('sidebarUsername').textContent = state.user.display_name || state.user.username;
+    document.getElementById('sidebarUsername').textContent = state.user.username;
     const roleMap = { admin: '管理员', user: '涉密人员' };
     document.getElementById('sidebarRole').textContent = roleMap[state.role] || state.role;
     // 管理员显示
@@ -586,8 +585,8 @@ async function showAddMemberModal() {
         if (state.role === 'admin') {
             const data = await apiGet('/auth/users');
             const userSel = document.getElementById('addMemberUserSelect');
-            userSel.innerHTML = '<option value="">不关联用户</option>' +
-                (data.users || []).map(u => `<option value="${u.id}">${u.username} (${u.display_name || u.username})</option>`).join('');
+            userSel.innerHTML = '<option value="">请选择用户</option>' +
+                (data.users || []).map(u => `<option value="${u.id}">${u.username}</option>`).join('');
         }
     } catch (_) {}
     new bootstrap.Modal(document.getElementById('addMemberModal')).show();
@@ -597,7 +596,7 @@ async function addMember() {
     const groupId = document.getElementById('addMemberGroupSelect').value;
     const name = document.getElementById('memberNameInput').value.trim();
     const userId = document.getElementById('addMemberUserSelect').value || null;
-    if (!groupId || !name) return showToast('请选择群组并输入名称', 'warning');
+    if (!groupId || !userId) return showToast('请选择群组和用户', 'warning');
     try {
         const data = await apiPost('/members', {
             group_id: parseInt(groupId),
@@ -733,13 +732,12 @@ async function loadUsers() {
         const users = data.users || [];
         const tbody = document.getElementById('usersTableBody');
         if (users.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">暂无用户</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">暂无用户</td></tr>';
             return;
         }
         tbody.innerHTML = users.map(u => `<tr>
             <td>${u.id}</td>
             <td>${esc(u.username)}</td>
-            <td>${esc(u.display_name || '-')}</td>
             <td>${esc(u.department || '-')}</td>
             <td><span class="badge ${u.role === 'admin' ? 'bg-danger' : 'bg-primary'}">${u.role === 'admin' ? '管理员' : '涉密人员'}</span></td>
             <td>${formatTime(u.created_at)}</td>

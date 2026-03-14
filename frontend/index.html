@@ -23,8 +23,8 @@
             <div id="loginForm">
                 <h4>用户登录</h4>
                 <div class="mb-3">
-                    <label class="form-label">用户名</label>
-                    <input type="text" class="form-control" id="loginUsername" placeholder="请输入用户名">
+                    <label class="form-label">姓名</label>
+                    <input type="text" class="form-control" id="loginUsername" placeholder="请输入姓名">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">密码</label>
@@ -39,12 +39,8 @@
             <div id="registerForm" style="display:none">
                 <h4>用户注册</h4>
                 <div class="mb-3">
-                    <label class="form-label">用户名</label>
-                    <input type="text" class="form-control" id="regUsername" placeholder="请输入用户名">
-                </div>
-                <div class="mb-3">
                     <label class="form-label">姓名</label>
-                    <input type="text" class="form-control" id="regDisplayName" placeholder="请输入真实姓名">
+                    <input type="text" class="form-control" id="regUsername" placeholder="请输入姓名">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">部门</label>
@@ -274,7 +270,7 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
-                            <thead><tr><th>ID</th><th>用户名</th><th>姓名</th><th>部门</th><th>角色</th><th>注册时间</th><th>操作</th></tr></thead>
+                            <thead><tr><th>ID</th><th>姓名</th><th>部门</th><th>角色</th><th>注册时间</th><th>操作</th></tr></thead>
                             <tbody id="usersTableBody"><tr><td colspan="7" class="text-center text-muted">加载中...</td></tr></tbody>
                         </table>
                     </div>

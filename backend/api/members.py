@@ -39,13 +39,13 @@ def add_member():
     try:
         data = request.get_json()
         group_id = data.get('group_id')
-        member_name = data.get('name', '未命名成员')
-        user_id = data.get('user_id')  # 可选，可以指定关联的用户
+        member_name = data.get('name', '').strip()
+        user_id = data.get('user_id')
         
-        if not group_id:
+        if not group_id or not user_id:
             return jsonify({
                 'success': False,
-                'message': '缺少 group_id 参数'
+                'message': '缺少 group_id 或 user_id 参数'
             }), 400
         
         # 初始化方案
@@ -63,6 +63,24 @@ def add_member():
                 'success': False,
                 'message': f'群组不存在 (ID: {group_id})'
             }), 404
+
+        # 检查用户是否已在该群组中
+        cursor.execute(
+            'SELECT id FROM members WHERE user_id=? AND group_id=?',
+            (user_id, group_id)
+        )
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({
+                'success': False,
+                'message': '该用户已是该群组的成员'
+            }), 400
+
+        # 若未提供成员名称，使用用户的 username
+        if not member_name:
+            cursor.execute('SELECT username FROM users WHERE id=?', (user_id,))
+            user_row = cursor.fetchone()
+            member_name = user_row['username'] if user_row else '未命名成员'
         
         # 加载密钥
         from pygroupsig import grpkey, mgrkey, gml
