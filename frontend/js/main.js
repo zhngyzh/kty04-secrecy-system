@@ -10,15 +10,21 @@ const state = {
     token: null,
     userId: null,
     role: null,
+    isSuperAdmin: false,  // 是否为超级管理员
     groups: []       // 缓存群组列表供各处下拉选使用
 };
 
+// 超级管理员可访问所有页面，普通管理员只能访问文件和签名
 const ROLE_PAGES = {
-    admin: ['dashboard', 'documents', 'groups', 'members', 'signatures', 'audit', 'admin'],
+    super_admin: ['dashboard', 'documents', 'groups', 'members', 'signatures', 'audit', 'admin'],
+    admin: ['dashboard', 'documents', 'signatures'],
     user: ['dashboard', 'documents', 'signatures']
 };
 
 function getAllowedPages() {
+    if (state.role === 'admin' && state.isSuperAdmin) {
+        return ROLE_PAGES['super_admin'];
+    }
     return ROLE_PAGES[state.role] || ['dashboard', 'documents'];
 }
 
@@ -29,6 +35,7 @@ function isPageAllowed(page) {
 function applyRoleView() {
     const allowed = getAllowedPages();
     const isAdmin = state.role === 'admin';
+    const isSuperAdmin = state.role === 'admin' && state.isSuperAdmin;
 
     // 控制侧边栏导航项可见性
     document.querySelectorAll('.sidebar-nav li[data-page]').forEach(li => {
@@ -36,10 +43,19 @@ function applyRoleView() {
         li.style.display = allowed.includes(page) ? '' : 'none';
     });
 
-    // 控制管理员专属按钮（admin-only class）
+    // 控制超级管理员专属按钮（super-admin-only class）
+    document.querySelectorAll('.super-admin-only').forEach(el => {
+        el.style.display = isSuperAdmin ? '' : 'none';
+    });
+
+    // 控制普通管理员可用按钮（admin-only class）
     document.querySelectorAll('.admin-only').forEach(el => {
         el.style.display = isAdmin ? '' : 'none';
     });
+
+    // 设置 body class 供 CSS 使用
+    document.body.classList.toggle('is-admin', isAdmin);
+    document.body.classList.toggle('is-super-admin', isSuperAdmin);
 }
 
 // ════════════════════════════════════════════
@@ -123,8 +139,15 @@ function saveAuth(data) {
     state.userId = data.user_id;
     state.token = data.token;
     state.role = data.role;
-    state.user = { username: data.username, role: data.role };
-    localStorage.setItem('auth', JSON.stringify({ userId: data.user_id, token: data.token, role: data.role, username: data.username }));
+    state.isSuperAdmin = data.is_super_admin || false;
+    state.user = { username: data.username, role: data.role, is_super_admin: data.is_super_admin };
+    localStorage.setItem('auth', JSON.stringify({ 
+        userId: data.user_id, 
+        token: data.token, 
+        role: data.role, 
+        isSuperAdmin: data.is_super_admin || false,
+        username: data.username 
+    }));
 }
 
 function loadAuth() {
@@ -135,7 +158,8 @@ function loadAuth() {
             state.userId = saved.userId;
             state.token = saved.token;
             state.role = saved.role;
-            state.user = { username: saved.username, role: saved.role };
+            state.isSuperAdmin = saved.isSuperAdmin || false;
+            state.user = { username: saved.username, role: saved.role, is_super_admin: saved.isSuperAdmin };
             return true;
         }
     } catch (_) {}
@@ -148,6 +172,7 @@ function doLogout() {
     state.token = null;
     state.userId = null;
     state.role = null;
+    state.isSuperAdmin = false;
     localStorage.removeItem('auth');
     document.body.classList.remove('is-admin');
     document.getElementById('authPage').style.display = '';
@@ -159,8 +184,10 @@ function showApp() {
     document.getElementById('mainApp').style.display = 'flex';
     // 更新侧边栏用户信息
     document.getElementById('sidebarUsername').textContent = state.user.username;
-    const roleMap = { admin: '管理员', user: '涉密人员' };
-    document.getElementById('sidebarRole').textContent = roleMap[state.role] || state.role;
+    let roleText = state.role === 'admin' 
+        ? (state.isSuperAdmin ? '超级管理员' : '管理员') 
+        : '涉密人员';
+    document.getElementById('sidebarRole').textContent = roleText;
     // 管理员显示
     if (state.role === 'admin') {
         document.body.classList.add('is-admin');
@@ -376,6 +403,19 @@ async function viewDocument(docId) {
             }).join('');
         }
 
+        // 根据是否已签名显示不同的内容区域
+        let contentHtml = '';
+        if (d.content_hidden) {
+            contentHtml = `
+                <div class="alert alert-warning">
+                    <i class="bi bi-lock"></i> <strong>文件内容已隐藏</strong><br>
+                    <small>您需要先签署此文件才能查看完整内容。签署后将自动显示文件内容。</small>
+                </div>
+            `;
+        } else {
+            contentHtml = `<div class="doc-content-box">${esc(d.content || '')}</div>`;
+        }
+
         document.getElementById('documentDetailContent').innerHTML = `
             <div class="doc-info-grid">
                 <div class="doc-info-item"><label>文件编号</label><span>${d.doc_number || '-'}</span></div>
@@ -386,10 +426,10 @@ async function viewDocument(docId) {
                 <div class="doc-info-item"><label>创建时间</label><span>${formatTime(d.created_at)}</span></div>
             </div>
             <h6><i class="bi bi-file-text"></i> 文件内容</h6>
-            <div class="doc-content-box">${esc(d.content || '')}</div>
+            ${contentHtml}
             <div class="doc-actions">
                 ${d.status !== 'archived' ? `<button class="btn btn-primary btn-sm" onclick="signDocument(${d.id})"><i class="bi bi-vector-pen"></i> 签署文件</button>` : ''}
-                ${sigs.length > 0 ? `<button class="btn btn-success btn-sm" onclick="verifyDocument(${d.id})"><i class="bi bi-check-circle"></i> 验证签名</button>` : ''}
+                ${sigs.length > 0 && !d.content_hidden ? `<button class="btn btn-success btn-sm" onclick="verifyDocument(${d.id})"><i class="bi bi-check-circle"></i> 验证签名</button>` : ''}
                 ${state.role === 'admin' && d.status !== 'archived' ? `<button class="btn btn-secondary btn-sm" onclick="archiveDocument(${d.id})"><i class="bi bi-archive"></i> 归档</button>` : ''}
             </div>
             <h6><i class="bi bi-vector-pen"></i> 签名记录 <span class="badge bg-secondary">${sigs.length}</span></h6>

@@ -127,7 +127,7 @@ def create_document():
 @bp.route('/<int:doc_id>', methods=['GET'])
 @require_auth
 def get_document(doc_id):
-    """获取文件详情（含签名列表，非管理员需为所属群组成员）"""
+    """获取文件详情（含签名列表，非管理员需为所属群组成员，且需签名后才能查看内容）"""
     user = get_current_user()
     conn = get_db()
     cursor = conn.cursor()
@@ -146,14 +146,25 @@ def get_document(doc_id):
         return jsonify({'success': False, 'message': '文件不存在'}), 404
 
     # 非管理员需为所属群组成员才能查看
+    has_signed = False
+    member_id = None
     if user and user.get('role') != ROLE_ADMIN:
         cursor.execute(
-            'SELECT COUNT(*) as cnt FROM members WHERE user_id=? AND group_id=?',
+            'SELECT id FROM members WHERE user_id=? AND group_id=?',
             (user['id'], doc['group_id'])
         )
-        if cursor.fetchone()['cnt'] == 0:
+        member_row = cursor.fetchone()
+        if not member_row:
             conn.close()
             return jsonify({'success': False, 'message': '无权访问该群组的文件'}), 403
+        member_id = member_row['id']
+
+        # 检查该成员是否已签署此文件
+        cursor.execute(
+            'SELECT COUNT(*) as cnt FROM signatures WHERE document_id=? AND member_id=?',
+            (doc_id, member_id)
+        )
+        has_signed = cursor.fetchone()['cnt'] > 0
 
     # 获取文件关联的签名
     cursor.execute(
@@ -169,6 +180,15 @@ def get_document(doc_id):
 
     doc_dict = dict(doc)
     doc_dict['signatures'] = sigs
+
+    # 非管理员未签名时隐藏文件内容
+    is_admin = user and user.get('role') == ROLE_ADMIN
+    if not is_admin and not has_signed:
+        doc_dict['content'] = None
+        doc_dict['content_hidden'] = True
+    else:
+        doc_dict['content_hidden'] = False
+
     return jsonify({'success': True, 'document': doc_dict})
 
 

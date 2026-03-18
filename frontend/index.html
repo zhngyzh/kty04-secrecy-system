@@ -190,7 +190,7 @@
             <div id="groupListView">
                 <div class="page-header">
                     <h4><i class="bi bi-people-fill"></i> 群组管理</h4>
-                    <button class="btn btn-primary btn-sm admin-only" onclick="showCreateGroupModal()"><i class="bi bi-plus-circle"></i> 创建群组</button>
+                    <button class="btn btn-primary btn-sm super-admin-only" onclick="showCreateGroupModal()"><i class="bi bi-plus-circle"></i> 创建群组</button>
                 </div>
                 <div class="row g-3" id="groupCards"></div>
             </div>
@@ -211,7 +211,7 @@
                     <select id="memberGroupFilter" class="form-select form-select-sm d-inline-block me-2" style="width:auto" onchange="loadMembers()">
                         <option value="">所有群组</option>
                     </select>
-                    <button class="btn btn-primary btn-sm admin-only" onclick="showAddMemberModal()"><i class="bi bi-person-plus"></i> 添加成员</button>
+                    <button class="btn btn-primary btn-sm super-admin-only" onclick="showAddMemberModal()"><i class="bi bi-person-plus"></i> 添加成员</button>
                 </div>
             </div>
             <div class="table-responsive">

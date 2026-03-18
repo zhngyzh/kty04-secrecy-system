@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from utils.database import get_db
 from utils.key_manager import KeyManager
-from utils.auth import require_admin, require_auth
+from utils.auth import require_super_admin, require_auth
 from pygroupsig import groupsig, constants
 import os
 
@@ -32,9 +32,9 @@ def list_groups():
 
 
 @bp.route('', methods=['POST'])
-@require_admin
+@require_super_admin
 def create_group():
-    """创建新群组（仅管理员）"""
+    """创建新群组（仅超级管理员）"""
     try:
         data = request.get_json()
         group_name = data.get('name', '未命名群组').strip()

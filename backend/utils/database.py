@@ -128,6 +128,7 @@ def init_db():
         ('signatures', 'signer_name', 'TEXT'),
         ('users', 'display_name', 'TEXT'),
         ('users', 'department', 'TEXT'),
+        ('users', 'is_super_admin', 'INTEGER DEFAULT 0'),
     ]
     for table, column, col_type in new_columns:
         _safe_add_column(cursor, table, column, col_type)

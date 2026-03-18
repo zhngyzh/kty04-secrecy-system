@@ -3,15 +3,15 @@
 """
 from flask import Blueprint, jsonify, request
 from utils.database import get_db
-from utils.auth import require_admin, require_auth, get_current_user
+from utils.auth import require_super_admin, require_auth, get_current_user
 
 bp = Blueprint('audit', __name__, url_prefix='/api/audit')
 
 
 @bp.route('/logs', methods=['GET'])
-@require_admin
+@require_super_admin
 def list_logs():
-    """获取审计日志列表（仅管理员）"""
+    """获取审计日志列表（仅超级管理员）"""
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 20, type=int)
     action = request.args.get('action')

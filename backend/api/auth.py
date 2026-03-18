@@ -3,7 +3,7 @@
 """
 from flask import Blueprint, jsonify, request
 from utils.database import get_db
-from utils.auth import require_admin, require_auth, get_current_user
+from utils.auth import require_super_admin, require_auth, get_current_user
 import hashlib
 import secrets
 
@@ -45,22 +45,23 @@ def register():
         hashed_password = hash_password(password)
         token = generate_token()
 
-        # 第一个注册的用户自动成为管理员
+        # 第一个注册的用户自动成为超级管理员
         cursor.execute('SELECT COUNT(*) as cnt FROM users')
         is_first = cursor.fetchone()['cnt'] == 0
         role = 'admin' if is_first else 'user'
+        is_super_admin = 1 if is_first else 0
 
         cursor.execute(
-            '''INSERT INTO users (username, password, role, token, display_name, department)
-               VALUES (?, ?, ?, ?, ?, ?)''',
-            (username, hashed_password, role, token, display_name, department)
+            '''INSERT INTO users (username, password, role, token, display_name, department, is_super_admin)
+               VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            (username, hashed_password, role, token, display_name, department, is_super_admin)
         )
         user_id = cursor.lastrowid
 
         cursor.execute(
             '''INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details)
                VALUES (?, ?, ?, ?, ?)''',
-            (user_id, 'register', 'users', user_id, f'用户注册: {username} (角色: {role})')
+            (user_id, 'register', 'users', user_id, f'用户注册: {username} (角色: {role}, 超级管理员: {bool(is_super_admin)})')
         )
 
         conn.commit()
@@ -68,10 +69,11 @@ def register():
 
         return jsonify({
             'success': True,
-            'message': '注册成功' + ('（首个用户，已设为管理员）' if is_first else ''),
+            'message': '注册成功' + ('（首个用户，已设为超级管理员）' if is_first else ''),
             'user_id': user_id,
             'token': token,
             'role': role,
+            'is_super_admin': bool(is_super_admin),
             'username': username
         })
     except Exception as e:
@@ -116,6 +118,7 @@ def login():
             'user_id': user['id'],
             'token': token,
             'role': user['role'],
+            'is_super_admin': bool(user['is_super_admin']) if user['is_super_admin'] is not None else False,
             'username': user['username']
         })
     except Exception as e:
@@ -135,13 +138,13 @@ def get_profile():
 
 
 @bp.route('/users', methods=['GET'])
-@require_admin
+@require_super_admin
 def list_users():
-    """获取用户列表（仅管理员）"""
+    """获取用户列表（仅超级管理员）"""
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute(
-        '''SELECT id, username, display_name, role, department, created_at
+        '''SELECT id, username, display_name, role, department, created_at, is_super_admin
            FROM users ORDER BY created_at'''
     )
     users = [dict(row) for row in cursor.fetchall()]
@@ -150,9 +153,9 @@ def list_users():
 
 
 @bp.route('/users/<int:uid>/role', methods=['PUT'])
-@require_admin
+@require_super_admin
 def update_user_role(uid):
-    """更新用户角色（仅管理员）"""
+    """更新用户角色（仅超级管理员）"""
     try:
         data = request.get_json()
         new_role = data.get('role')

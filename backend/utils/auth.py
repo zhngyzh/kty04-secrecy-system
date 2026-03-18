@@ -58,6 +58,26 @@ def require_admin(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def require_super_admin(f):
+    """要求超级管理员权限装饰器（仅初始管理员）"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': '未授权，请先登录'
+            }), 401
+        
+        if user['role'] != ROLE_ADMIN or not user.get('is_super_admin'):
+            return jsonify({
+                'success': False,
+                'message': '权限不足，需要超级管理员权限'
+            }), 403
+        
+        return f(*args, **kwargs)
+    return decorated_function
+
 def check_user_in_group(user_id, group_id):
     """检查用户是否在指定群组中"""
     conn = get_db()

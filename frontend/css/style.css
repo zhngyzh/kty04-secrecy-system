@@ -528,6 +528,10 @@ body {
 }
 
 /* ── 管理员专属元素 ── */
+.super-admin-only { display: none; }
+body.is-super-admin .super-admin-only { display: inline-block; }
+body.is-super-admin #navAdmin { display: flex !important; }
+
+/* 普通管理员可用元素 */
 .admin-only { display: none; }
 body.is-admin .admin-only { display: inline-block; }
-body.is-admin #navAdmin { display: flex !important; }

@@ -4,7 +4,7 @@
 from flask import Blueprint, jsonify, request
 from utils.database import get_db
 from utils.key_manager import KeyManager
-from utils.auth import require_admin
+from utils.auth import require_super_admin
 from pygroupsig import groupsig, constants, memkey
 from base64 import b64encode
 
@@ -12,9 +12,9 @@ bp = Blueprint('members', __name__, url_prefix='/api/members')
 key_manager = KeyManager()
 
 @bp.route('', methods=['GET'])
-@require_admin
+@require_super_admin
 def list_members():
-    """获取成员列表（仅管理员）"""
+    """获取成员列表（仅超级管理员）"""
     group_id = request.args.get('group_id', type=int)
     
     conn = get_db()
@@ -33,9 +33,9 @@ def list_members():
     return jsonify({'members': members})
 
 @bp.route('', methods=['POST'])
-@require_admin
+@require_super_admin
 def add_member():
-    """添加新成员（仅管理员）"""
+    """添加新成员（仅超级管理员）"""
     try:
         data = request.get_json()
         group_id = data.get('group_id')
@@ -172,9 +172,9 @@ def add_member():
         }), 500
 
 @bp.route('/<int:member_id>', methods=['GET'])
-@require_admin
+@require_super_admin
 def get_member(member_id):
-    """获取成员详情（仅管理员）"""
+    """获取成员详情（仅超级管理员）"""
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM members WHERE id=?', (member_id,))
