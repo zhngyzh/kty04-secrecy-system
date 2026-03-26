@@ -1,74 +1,52 @@
-# 权限系统使用指南
+# 权限系统说明
 
-## 概述
+## 1. 角色定义
 
-该系统实现了一个简单的权限管理系统，分为两种角色：
+### 管理员（admin）
 
-- **管理员 (Admin)**：可以初始化系统、创建群组、添加成员、追踪签名
-- **普通用户 (User)**：只能在获得密钥后生成签名
+可执行:
+- 创建群组
+- 添加成员并分发成员密钥
+- 追踪签名者身份
+- 查看审计日志与系统统计
 
-## 核心特性
+### 普通用户（user）
 
-### 1. 用户认证 (`/api/auth`)
+可执行:
+- 登录后访问授权资源
+- 在所属群组内匿名签名
+- 验证签名与声明签名
 
-#### 注册
-```bash
-POST /api/auth/register
-Content-Type: application/json
+## 2. 认证机制
 
-{
-    "username": "user1",
-    "password": "password123"
-}
+请求头使用:
+- X-User-ID
+- X-Token
 
-响应:
-{
-    "success": true,
-    "user_id": 1,
-    "token": "token_string",
-    "role": "user"  // 默认为普通用户
-}
-```
+后端通过装饰器控制权限边界:
+- require_auth: 仅要求登录
+- require_admin / require_super_admin: 要求管理员权限
 
-#### 登录
-```bash
-POST /api/auth/login
-Content-Type: application/json
+## 3. 关键权限边界
 
-{
-    "username": "user1",
-    "password": "password123"
-}
+- /api/groups POST: 仅管理员
+- /api/members POST: 仅管理员
+- /api/documents/<id>/signatures/<sig_id>/trace POST: 仅管理员
+- /api/audit/logs GET: 仅管理员
+- /api/documents/<id>/sign POST: 登录且属于目标群组成员
 
-响应:
-{
-    "success": true,
-    "user_id": 1,
-    "token": "token_string",
-    "role": "user"
-}
-```
+## 4. 最小授权原则
 
-### 2. 权限装饰器
+- 普通用户默认不可见系统管理与审计能力。
+- 文件内容访问可根据业务规则做进一步收敛（例如先签后读）。
+- 追踪能力仅在问责场景开放给管理员。
 
-#### `@require_auth`
-任何已登录用户都可以访问
+## 5. 测试建议
 
-#### `@require_admin`
-只有管理员可以访问
+- 功能测试覆盖正向与越权路径。
+- 至少包含以下断言:
+  - 普通用户调用管理员接口返回 401 或 403
+  - 成员身份不匹配时签名被拒绝
+  - 管理员可完成 trace 流程
 
-## 管理员角色设置
-
-初次使用时，需要将某个用户升级为管理员：
-
-```sql
-UPDATE users SET role='admin' WHERE id=1;
-```
-
-## 工作流程
-
-1. 用户注册/登录
-2. 管理员创建群组
-3. 管理员为用户添加成员并分发密钥
-4. 用户使用密钥签名
-5. 管理员验证和追踪签名
+执行方式参考 README.md 的“测试（pytest）”章节。

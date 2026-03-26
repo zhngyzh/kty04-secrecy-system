@@ -1,0 +1,30 @@
+[project]
+name = "kty04-management"
+version = "0.1.0"
+description = "KTY04 group signature management system"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "Flask==3.0.0",
+    "Flask-Cors==4.0.0",
+    "cffi>=1.0.0",
+    "pygroupsig",
+    "requests>=2.31.0",
+    "pytest>=8.0.0",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+pygroupsig = { path = "../libgroupsig/src/wrappers/python", editable = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"
+markers = [
+    "functional: functional API tests",
+    "performance: performance-oriented API tests",
+    "requires_admin: tests requiring admin session",
+]

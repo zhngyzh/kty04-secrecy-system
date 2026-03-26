@@ -2,56 +2,32 @@
 
 ## 前置条件
 
-1. Python 3.6 或更高版本
-2. CMake 和 Make（用于构建 C 库）
-3. C/C++ 编译工具链
+1. Python 3.10 或更高版本
+2. uv（用于项目虚拟环境与依赖管理）
 
 ## 完整安装步骤
 
-### 步骤 1: 构建 libgroupsig C 库
+### 步骤 1: 同步项目依赖
 
 ```bash
-cd /home/zhangyzh/projects/groupsig/newlibgroupsig/libgroupsig
-mkdir -p build
-cd build
-cmake ..
-make
+uv sync
 ```
 
-**注意**: 确保构建成功，特别是 `libkty04.a` 文件应该存在于 `build/lib/` 目录下。
+### 步骤 2: 库使用说明（外部参考）
 
-### 步骤 2: 安装 pygroupsig Python 包装器
+本项目文档聚焦管理系统，不展开群签名库内部构建与接口。
+请直接参考：https://github.com/IBM/libgroupsig
+
+### 步骤 3: 运行系统
 
 ```bash
-cd ../src/wrappers/python
-pip install -e .
+bash start.sh
 ```
 
-**验证安装**:
-```bash
-python3 -c "from pygroupsig import constants; print('KTY04_CODE:', constants.KTY04_CODE)"
-```
-
-如果输出 `KTY04_CODE: 0`，说明安装成功。
-
-### 步骤 3: 安装项目依赖
+或手动启动：
 
 ```bash
-cd /home/zhangyzh/projects/groupsig/kty04-management
-pip install -r requirements.txt
-```
-
-### 步骤 4: 运行系统
-
-**方式一：使用启动脚本（推荐）**
-```bash
-./start.sh
-```
-
-**方式二：手动启动**
-```bash
-cd backend
-python3 app.py
+uv run python backend/app.py
 ```
 
 然后在浏览器中访问: http://localhost:5000
@@ -61,47 +37,13 @@ python3 app.py
 ### 问题 1: `ModuleNotFoundError: No module named 'pygroupsig'`
 
 **解决方案**: 
-- 确保已完成步骤 1 和步骤 2
-- 检查是否在正确的 Python 环境中安装
-- 尝试重新安装: `cd newlibgroupsig/libgroupsig/src/wrappers/python && pip install -e . --force-reinstall`
+- 确保已执行 `uv sync`
+- 尝试重新同步: `uv sync --reinstall`
+- 若仍失败，请按官方库文档排查：https://github.com/IBM/libgroupsig
 
-### 问题 2: `libkty04.a: No such file or directory`
-
-**解决方案**:
-- 确保已完成步骤 1，并且构建成功
-- 检查 `newlibgroupsig/libgroupsig/build/lib/libkty04.a` 是否存在
-- 如果不存在，重新运行 `make` 命令
-
-### 问题 3: 导入错误或运行时错误
+### 问题 2: 导入错误或运行时错误
 
 **解决方案**:
-- 检查 Python 版本: `python3 --version`（需要 >= 3.6）
-- 检查所有依赖是否安装: `pip list | grep -E "Flask|cffi"`
+- 检查 Python 版本: `uv run python --version`（需要 >= 3.10）
+- 检查所有依赖是否安装: `uv pip list --python .venv/bin/python | grep -E "Flask|cffi|pygroupsig"`
 - 查看错误日志，通常会有更详细的错误信息
-
-## 验证安装
-
-运行以下测试脚本验证安装：
-
-```python
-# test_install.py
-try:
-    from pygroupsig import groupsig, constants
-    
-    code = constants.KTY04_CODE
-    groupsig.init(code, 0)
-    group = groupsig.setup(code)
-    print("✓ KTY04 初始化成功")
-    print(f"✓ 群组创建成功 (ID: {group})")
-    groupsig.clear(code)
-    print("✓ 所有测试通过！")
-except Exception as e:
-    print(f"✗ 错误: {e}")
-    import traceback
-    traceback.print_exc()
-```
-
-保存为 `test_install.py` 并运行：
-```bash
-python3 test_install.py
-```
