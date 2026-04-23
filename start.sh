@@ -27,7 +27,7 @@ $PY_CMD -c "from pygroupsig import constants; print('✓ pygroupsig 已安装')"
     echo "  1. cd ../libgroupsig"
     echo "  2. mkdir -p build && cd build"
     echo "  3. cmake .. && make"
-    echo "  4. cd ../../kty04-management"
+    echo "  4. cd ../../kty04-secrecy-system"
     echo "  5. uv sync"
     exit 1
 }

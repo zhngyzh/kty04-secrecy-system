@@ -1,5 +1,5 @@
 [project]
-name = "kty04-management"
+name = "kty04-secrecy-system"
 version = "0.1.0"
 description = "KTY04 group signature management system"
 readme = "README.md"

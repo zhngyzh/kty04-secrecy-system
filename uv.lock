@@ -308,7 +308,7 @@ wheels = [
 ]
 
 [[package]]
-name = "kty04-management"
+name = "kty04-secrecy-system"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

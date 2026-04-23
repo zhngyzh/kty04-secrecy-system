@@ -9,7 +9,6 @@ venv/
 .venv/
 
 # 数据文件
-backend/data/
 data/
 !data/.gitkeep
 *.db
@@ -17,6 +16,7 @@ data/
 
 # 本地性能测试输出
 /tmp/
+perf/
 performance_test_result.json
 
 # IDE

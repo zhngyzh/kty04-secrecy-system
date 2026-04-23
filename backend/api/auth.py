@@ -101,7 +101,15 @@ def login():
             return jsonify({'success': False, 'message': '用户名或密码错误'}), 401
 
         token = generate_token()
-        cursor.execute('UPDATE users SET token=? WHERE id=?', (token, user['id']))
+        # 当前登录用户若为 admin，则自动提升为超级管理员。
+        is_super_admin = bool(user['is_super_admin']) if user['is_super_admin'] is not None else False
+        if user['role'] == 'admin' and not is_super_admin:
+            is_super_admin = True
+
+        cursor.execute(
+            'UPDATE users SET token=?, is_super_admin=? WHERE id=?',
+            (token, 1 if is_super_admin else 0, user['id'])
+        )
 
         cursor.execute(
             '''INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details)
@@ -118,7 +126,7 @@ def login():
             'user_id': user['id'],
             'token': token,
             'role': user['role'],
-            'is_super_admin': bool(user['is_super_admin']) if user['is_super_admin'] is not None else False,
+            'is_super_admin': is_super_admin,
             'username': user['username']
         })
     except Exception as e:
